@@ -1,0 +1,6 @@
+# 換行：Linux／macOS 的 gradlew 要 LF，Windows 的批次檔與 PowerShell 腳本要 CRLF
+/gradlew text eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.jar binary
+*.png binary

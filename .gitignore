@@ -1,0 +1,29 @@
+# Gradle / Android Studio
+.gradle/
+build/
+/local.properties
+.idea/
+*.iml
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+.DS_Store
+
+# Cloudflare Pages 部署工具（wrangler）的快取
+.wrangler/
+
+# 簽章與機密：絕不進版控
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+*.p12
+*.pem
+.env
+google-services.json
+
+# 測試輸出
+*.apk
+*.aab
+*.hprof

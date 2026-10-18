@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 小工具的圓形按鈕：accent 底（淺色石板灰、深色青綠），圖形用 on-accent，對比都 ≥ 9:1 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/accent" />
+</shape>

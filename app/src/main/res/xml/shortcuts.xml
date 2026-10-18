@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 長按 App 圖示出現「說話」；拖到主畫面就是一顆直接開始聽的圖示 -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="talk"
+        android:shortcutLongLabel="@string/shortcut_talk_long"
+        android:shortcutShortLabel="@string/shortcut_talk">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.c520.shengdewoxin.TriggerActivity"
+            android:targetPackage="com.c520.shengdewoxin" />
+    </shortcut>
+</shortcuts>

@@ -1,0 +1,6 @@
+# 版本跟曆刻響、晚點回一致。AGP 9 內建 Kotlin；本專案不用任何第三方或 AndroidX 套件。
+[versions]
+agp = "9.0.1"
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }

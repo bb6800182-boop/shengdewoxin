@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>聲得我心｜取代 Google 助理的簡單語音助理</title>
+<meta name="description" content="取代 Google 助理的 Android 語音助理：長按電源鍵說一句，設鬧鐘、開手電筒、調音量、取消靜音、打電話、開 App 馬上做好。常用指令在手機上直接判斷，不需要 AI。免費、開源。">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:title" content="聲得我心｜取代 Google 助理的簡單語音助理">
+<meta property="og:description" content="只做簡單的事，但做得快。常用指令在手機上直接判斷，不需要呼叫大型 AI。">
+<meta property="og:url" content="https://c520.pages.dev/shengdewoxin/">
+<meta property="og:image" content="https://c520.pages.dev/shengdewoxin/icon-512.png">
+<link rel="canonical" href="https://c520.pages.dev/shengdewoxin/">
+<meta name="theme-color" content="#F1F5F9">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+/* 顏色、字級、間距、圓角都取自 App 的 DESIGN.md 淺色版（C520 網站一律亮色，不跟著系統變深色） */
+:root {
+  color-scheme: light;
+  --primary: #0F172A;
+  --on-primary: #FFFFFF;
+  --accent: #1E293B;
+  --on-accent: #5EEAD4;
+  --accent-text: #0F766E;
+  --canvas: #F1F5F9;
+  --surface-1: #FFFFFF;
+  --surface-2: #F1F5F9;
+  --hairline: #E2E8F0;
+  --hairline-strong: #CBD5E1;
+  --ink: #0F172A;
+  --ink-muted: #334155;
+  --ink-subtle: #475569;
+  --success: #15803D;
+  --font: Roboto, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --s-xs: 8px;
+  --s-sm: 12px;
+  --s-md: 16px;
+  --s-lg: 20px;
+  --s-xl: 24px;
+  --s-xxl: 32px;
+  font: 400 15px/1.6 var(--font);
+  background: var(--canvas);
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+h1, h2, h3, p, ol, ul { margin: 0; }
+a { color: var(--accent-text); text-underline-offset: 4px; }
+a:focus-visible, summary:focus-visible, .btn:focus-visible { outline: 3px solid var(--accent-text); outline-offset: 3px; }
+.wrap { max-width: 960px; margin-inline: auto; padding-inline: var(--s-md); }
+.skip { position: absolute; left: 10px; top: 10px; z-index: 9; padding: 10px 16px; border-radius: 999px; background: var(--primary); color: var(--on-primary); transform: translateY(-200%); }
+.skip:focus { transform: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.ic { width: 22px; height: 22px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* 頁首：回 C520 首頁、App 名稱、下載 */
+.top { display: flex; align-items: center; gap: var(--s-md); min-height: 64px; border-bottom: 1px solid var(--hairline); }
+.home { display: inline-flex; align-items: center; min-height: 44px; padding-right: var(--s-md); border-right: 1px solid var(--hairline-strong); font: 500 17px/1 Georgia, serif; font-variant-numeric: lining-nums; color: var(--ink-subtle); text-decoration: none; }
+.home:hover { color: var(--ink); }
+.brand { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; font-weight: 600; }
+.brand img { width: 32px; height: 32px; border-radius: 8px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; border: 1px solid var(--primary); border-radius: 999px; background: var(--primary); color: var(--on-primary); font: 500 15px/1.2 var(--font); text-decoration: none; white-space: nowrap; }
+.btn:hover { background: #1E293B; border-color: #1E293B; }
+.btn.ghost { background: var(--surface-1); color: var(--ink); border-color: var(--hairline-strong); }
+.btn.ghost:hover { background: var(--surface-2); }
+.top .btn { min-height: 40px; padding: 0 16px; font-size: 14px; }
+
+/* 開場 */
+.hero { display: grid; grid-template-columns: auto 1fr; gap: var(--s-xxl); align-items: center; padding-block: 48px 40px; }
+.hero > img { width: 160px; height: 160px; border-radius: 36px; }
+.eyebrow { color: var(--accent-text); font-size: 13px; font-weight: 600; letter-spacing: .5px; }
+h1 { margin-top: 6px; font-size: 40px; line-height: 1.2; font-weight: 700; letter-spacing: .5px; }
+.lead { margin-top: var(--s-sm); font-size: 20px; line-height: 1.5; color: var(--ink-muted); }
+.actions { display: flex; flex-wrap: wrap; gap: var(--s-sm); margin-top: var(--s-xl); }
+.meta { margin-top: var(--s-sm); color: var(--ink-subtle); font-size: 13px; }
+
+/* 區塊 */
+section { padding-block: 36px; border-top: 1px solid var(--hairline); }
+h2 { font-size: 26px; line-height: 1.3; font-weight: 700; }
+.sub { margin-top: 6px; color: var(--ink-subtle); }
+.story { margin-top: var(--s-lg); padding: var(--s-xl); border-radius: var(--r-lg); background: var(--surface-1); border: 1px solid var(--hairline); font-size: 17px; line-height: 1.8; }
+.story p + p { margin-top: var(--s-sm); }
+.story strong { color: var(--ink); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--s-sm); margin-top: var(--s-lg); }
+.card { padding: var(--s-lg); border-radius: var(--r-lg); background: var(--surface-1); border: 1px solid var(--hairline); }
+.card .ic { color: var(--accent-text); }
+.card h3 { margin-top: 10px; font-size: 17px; line-height: 1.4; }
+.card p { margin-top: 4px; color: var(--ink-subtle); font-size: 14px; }
+.says { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding: 0; list-style: none; }
+.says li { padding: 4px 12px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--hairline); color: var(--ink-muted); font-size: 14px; }
+
+/* 情境示意 */
+.flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-sm); margin-top: var(--s-lg); padding: 0; list-style: none; counter-reset: f; }
+.flow li { position: relative; padding: var(--s-lg); border-radius: var(--r-lg); background: var(--surface-1); border: 1px solid var(--hairline); }
+.flow b { display: block; color: var(--accent-text); font-size: 13px; }
+.flow span { display: block; margin-top: 6px; font-size: 16px; }
+
+/* 安裝步驟 */
+.steps { margin-top: var(--s-lg); padding: 0; list-style: none; counter-reset: s; display: grid; gap: var(--s-sm); }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 36px 1fr; gap: var(--s-sm); padding: var(--s-md) var(--s-lg); border-radius: var(--r-lg); background: var(--surface-1); border: 1px solid var(--hairline); }
+.steps li::before { content: counter(s); display: grid; place-items: center; width: 32px; height: 32px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.steps b { display: block; }
+.steps span { display: block; color: var(--ink-subtle); font-size: 14px; }
+
+/* 常見問題 */
+details { margin-top: var(--s-sm); border-radius: var(--r-md); background: var(--surface-1); border: 1px solid var(--hairline); }
+summary { display: flex; align-items: center; justify-content: space-between; gap: var(--s-sm); min-height: 52px; padding: 0 var(--s-lg); cursor: pointer; font-weight: 600; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary .ic { transition: transform .15s; color: var(--ink-subtle); }
+details[open] summary .ic { transform: rotate(180deg); }
+.faq-a { padding: 0 var(--s-lg) var(--s-lg); color: var(--ink-muted); }
+.faq-a p + p { margin-top: 8px; }
+
+.foot { padding-block: var(--s-xxl); border-top: 1px solid var(--hairline); color: var(--ink-subtle); font-size: 13px; }
+.foot p + p { margin-top: 8px; }
+
+@media (max-width: 720px) {
+  .hero { grid-template-columns: 1fr; gap: var(--s-lg); padding-block: 32px; }
+  .hero > img { width: 96px; height: 96px; border-radius: 22px; }
+  h1 { font-size: 34px; }
+  .lead { font-size: 18px; }
+  .flow { grid-template-columns: 1fr; }
+  .story { padding: var(--s-lg); font-size: 16px; }
+}
+@media (max-width: 400px) {
+  .brand span { display: none; }
+  .actions .btn { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+<svg class="defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></symbol>
+  <symbol id="i-tap" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M3.5 9.5a8 8 0 0 0 0 5M20.5 9.5a8 8 0 0 1 0 5"/></symbol>
+  <symbol id="i-widget" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><circle cx="17" cy="17" r="4"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-tile" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 14h3m3 0h2"/></symbol>
+  <symbol id="i-headset" viewBox="0 0 24 24"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></symbol>
+  <symbol id="i-alarm" viewBox="0 0 24 24"><circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 2M4 5l3-2m13 2-3-2"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="m11 5-6 4H2v6h3l6 4V5Z"/><path d="M15 9a4.5 4.5 0 0 1 0 6m3-9a8.5 8.5 0 0 1 0 12"/></symbol>
+  <symbol id="i-app" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="m10 9 5 3-5 3V9Z"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2m0 15v2M2.5 12h2m15 0h2M5.3 5.3l1.4 1.4m10.6 10.6 1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-8 8H4l1.6-3A8 8 0 1 1 20 12Z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5m8-10 5 5-5 5"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+</svg>
+
+<header class="wrap top">
+  <a class="home" href="/" aria-label="回 C520 首頁">C520</a>
+  <div class="brand"><img src="icon.svg" alt="" width="32" height="32"><span>聲得我心</span></div>
+  <a class="btn" href="shengdewoxin.apk" download="聲得我心-v0.2.0.apk">下載</a>
+</header>
+
+<main id="main" class="wrap" tabindex="-1">
+  <div class="hero">
+    <img src="icon-512.png" alt="聲得我心的圖示：石板灰底，白色圓環中間穿過一條青綠聲波" width="160" height="160">
+    <div>
+      <p class="eyebrow">取代 Google 助理的 Android App</p>
+      <h1>聲得我心</h1>
+      <p class="lead">只做簡單的事，但做得快。<br>長按電源鍵，說一句就幫你做好。</p>
+      <div class="actions">
+        <a class="btn" href="shengdewoxin.apk" download="聲得我心-v0.2.0.apk"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>下載 APK</a>
+        <a class="btn ghost" href="https://github.com/bb6800182-boop/shengdewoxin" target="_blank" rel="noopener noreferrer"><svg class="ic" aria-hidden="true"><use href="#i-code"/></svg>原始碼<span class="sr-only">（GitHub，另開分頁）</span></a>
+      </div>
+      <p class="meta">v0.2.0・約 170 KB・Android 12 以上<br>免費、MIT 開源・不需要 AI 也能用</p>
+    </div>
+  </div>
+
+  <section aria-labelledby="why">
+    <h2 id="why">為什麼做這個 App</h2>
+    <div class="story">
+      <p>Google 助理換成 Gemini 之後，連「設鬧鐘」「開手電筒」這種小事，也要經過大型 AI 模型處理。</p>
+      <p><strong>我只需要簡單的動作，不需要呼叫這麼高階的模型。</strong>所以聲得我心把常用指令都放在手機上直接判斷：說完就做，不用等雲端、不用登入，也不用付 AI 的錢。</p>
+      <p>真的遇到聽不懂的句子，才可以選擇交給你自己的 AI 金鑰，而且預設用最小、最快的模型。</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="how">
+    <h2 id="how">隨時叫得出來</h2>
+    <p class="sub">都不用一直開著麥克風，不會額外耗電。</p>
+    <div class="grid">
+      <div class="card"><svg class="ic" aria-hidden="true"><use href="#i-power"/></svg><h3>長按電源鍵</h3><p>系統設定把「按住電源鍵」改成數位助理。</p></div>
+      <div class="card"><svg class="ic" aria-hidden="true"><use href="#i-tap"/></svg><h3>手機背面點兩下</h3><p>Pixel 的「快速輕觸」，動作選數位助理。</p></div>
+      <div class="card"><svg class="ic" aria-hidden="true"><use href="#i-widget"/></svg><h3>主畫面小工具</h3><p>一顆麥克風按鈕，點一下就開始聽。</p></div>
+      <div class="card"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg><h3>鎖定畫面小工具</h3><p>Android 16 QPR2 起的 Pixel 手機可以放在鎖定畫面。</p></div>
+      <div class="card"><svg class="ic" aria-hidden="true"><use href="#i-tile"/></svg><h3>快速設定磁貼</h3><p>下拉通知列點一下；也能長按圖示選「說話」。</p></div>
+      <div class="card"><svg class="ic" aria-hidden="true"><use href="#i-headset"/></svg><h3>耳機、車上的語音鍵</h3><p>藍牙耳機或方向盤的語音鍵（要裝置有支援）。</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="say">
+    <h2 id="say">說了就做</h2>
+    <p class="sub">下面這些都在手機上直接判斷，不需要 AI；除了查天氣，也不用網路。</p>
+    <div class="grid">
+      <div class="card"><svg class="ic" aria-hidden="true"><use href="#i-alarm"/></svg><h3>鬧鐘、計時</h3><ul class="says"><li>明天早上七點叫我</li><li>計時十分鐘</li><li>十分鐘後提醒我關火</li></ul></div>
+      <div class="card"><svg class="ic" aria-hidden="true"><use href="#i-volume"/></svg><h3>聲音與螢幕</h3><ul class="says"><li>取消靜音</li><li>震動模式</li><li>音量調到五十</li><li>開勿擾</li><li>螢幕亮一點</li><li>打開手電筒</li></ul></div>
+      <div class="card"><svg class="ic" aria-hidden="true"><use href="#i-app"/></svg><h3>App 與音樂</h3><ul class="says"><li>打開 LINE</li><li>下一首</li><li>暫停</li><li>打開 Wi-Fi 設定</li></ul></div>
+      <div class="card"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg><h3>導航、打電話</h3><ul class="says"><li>導航到台北車站</li><li>打給媽媽</li></ul><p>名字相近的人會列出來讓你選，不會打錯人。</p></div>
+      <div class="card"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><h3>時間與天氣</h3><ul class="says"><li>現在幾點</li><li>今天星期幾</li><li>明天會下雨嗎</li></ul></div>
+      <div class="card"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><h3>AI（選用）</h3><p>規則聽不懂的句子、一般問答，可以交給你自己的 Claude、DeepSeek 或 OpenAI 金鑰，大約 1 秒回應。不填也能用上面全部的功能。</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="routine">
+    <h2 id="routine">情境：一句話做好幾件事</h2>
+    <p class="sub">自己設定觸發語句和要做的事，「要做的事」用平常說話的方式一行寫一句。還能設定助理怎麼稱呼你。</p>
+    <ol class="flow">
+      <li><b>你說</b><span>「我到家了」</span></li>
+      <li><b>它回你</b><span>「小明，歡迎回家」</span></li>
+      <li><b>接著做好</b><span>取消靜音、媒體音量調到 70、關閉勿擾</span></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="install">
+    <h2 id="install">安裝與設定</h2>
+    <ol class="steps">
+      <li><div><b>下載並安裝 APK</b><span>沒有上架 Google Play。用手機開這一頁，點「下載 APK」，安裝時允許瀏覽器安裝未知的應用程式。</span></div></li>
+      <li><div><b>設為預設數位助理</b><span>打開聲得我心，「設定」頁的第一項會帶你到系統的「預設數位助理應用程式」，選「聲得我心」。</span></div></li>
+      <li><div><b>允許麥克風</b><span>用來聽你說話；聯絡人、位置、行事曆等權限用不到可以不給。</span></div></li>
+      <li><div><b>選好叫出來的方式</b><span>「說明」頁的「叫出助理的方式」有每一種的設定按鈕，例如把「按住電源鍵」改成數位助理。</span></div></li>
+      <li><div><b>（選用）填 AI 金鑰</b><span>不填也能用。想讓它回答一般問題時，展開「設定」頁的「AI（選用）」填金鑰，按「測試連線」確認。</span></div></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="faq">
+    <h2 id="faq">常見問題</h2>
+    <details id="faq-wake">
+      <summary>為什麼不能喊名字叫出來？<svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></summary>
+      <div class="faq-a"><p>手機裡專門聽喚醒詞的低耗電晶片只開放給系統內建的助理。第三方 App 要喊名字，就得一直開著麥克風和處理器，很耗電，狀態列也會一直亮著麥克風圖示。所以改用長按電源鍵、背面點兩下、小工具這些不耗電的叫法。</p></div>
+    </details>
+    <details id="faq-ai">
+      <summary>一定要有 AI 金鑰嗎？要花錢嗎？<svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></summary>
+      <div class="faq-a"><p>不用。鬧鐘、計時、音量、靜音、手電筒、亮度、勿擾、音樂、開 App、導航、打電話、天氣和情境，都在手機上直接判斷。</p><p>填了金鑰，只有規則聽不懂的句子才會送出去，費用由你選的 AI 服務計算；預設用最小、最便宜的模型，每句的費用很低。</p></div>
+    </details>
+    <details id="faq-lock">
+      <summary>鎖定畫面可以用嗎？<svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></summary>
+      <div class="faq-a"><p>長按電源鍵在鎖定畫面也叫得出來。要打開其他 App 的指令（例如導航、開 App）會先請你解鎖，這是 Android 的安全規定。</p></div>
+    </details>
+    <details id="faq-privacy">
+      <summary>我說的話會被上傳嗎？<svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></summary>
+      <div class="faq-a"><p>語音辨識由手機上的 Google 語音服務處理。聲得我心自己不收集任何資料、沒有使用統計。</p><p>會送出去的只有兩種：填了 AI 金鑰時，規則聽不懂的那一句話送給你選的 AI 服務；查天氣時，大概位置送給 Open-Meteo 天氣服務。AI 金鑰只存在手機，不備份、不轉移。</p></div>
+    </details>
+    <details id="faq-phone">
+      <summary>支援哪些手機？<svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></summary>
+      <div class="faq-a"><p>Android 12 以上、有 Google 語音服務的手機。在 Pixel 7 Pro（Android 17）上開發與測試；背面點兩下和鎖定畫面小工具是 Pixel 的功能，其他品牌的手機看各自的設定。</p></div>
+    </details>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>隱私：不收集任何資料、沒有使用統計；AI 金鑰只存在你的手機。</p>
+  <p>天氣資料來自 <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a>（CC BY 4.0）。</p>
+  <p>本專案與 Google、Anthropic、OpenAI、DeepSeek 沒有關係；Android、Google、Gemini 是 Google LLC 的商標，Claude 是 Anthropic 的商標，OpenAI 是 OpenAI 的商標。</p>
+  <p>原始碼：<a href="https://github.com/bb6800182-boop/shengdewoxin" target="_blank" rel="noopener noreferrer">GitHub</a>（MIT 授權）・聯絡：<a href="mailto:bb6800182@gmail.com">bb6800182@gmail.com</a></p>
+  <p><a href="/">更多作品</a></p>
+  <p>© 2026 C520</p>
+</footer>
+<script>
+// 連到某一題（例如 #faq-wake）時自動展開那一題
+const openQ = id => { const d = document.getElementById(id); if (d && d.tagName === 'DETAILS') d.open = true; };
+document.querySelectorAll('a[href^="#faq-"]').forEach(a => a.addEventListener('click', () => openQ(a.hash.slice(1))));
+openQ(decodeURIComponent(location.hash.slice(1)));
+</script>
+</body>
+</html>

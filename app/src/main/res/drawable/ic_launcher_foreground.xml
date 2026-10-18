@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 圖示前景：白色圓環＋青綠聲波線（DESIGN.md 的 icon-ring、icon-wave），也當單色主題圖示用 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M54,30A24,24 0 1 1 54,78A24,24 0 1 1 54,30Z"
+        android:strokeWidth="4.4"
+        android:strokeColor="#FFFFFFFF" />
+    <path
+        android:pathData="M26,54.06 L26.7,54.11 L27.4,54.17 L28.1,54.25 L28.8,54.34 L29.5,54.43 L30.2,54.52 L30.9,54.59 L31.6,54.62 L32.3,54.61 L33,54.52 L33.7,54.34 L34.4,54.06 L35.1,53.66 L35.8,53.15 L36.5,52.54 L37.2,51.85 L37.9,51.13 L38.6,50.43 L39.3,49.83 L40,49.39 L40.7,49.2 L41.4,49.33 L42.1,49.83 L42.8,50.76 L43.5,52.1 L44.2,53.83 L44.9,55.88 L45.6,58.14 L46.3,60.46 L47,62.68 L47.7,64.62 L48.4,66.12 L49.1,67.01 L49.8,67.2 L50.5,66.61 L51.2,65.25 L51.9,63.16 L52.6,60.47 L53.3,57.35 L54,54 L54.7,50.65 L55.4,47.53 L56.1,44.84 L56.8,42.75 L57.5,41.39 L58.2,40.8 L58.9,40.99 L59.6,41.88 L60.3,43.38 L61,45.32 L61.7,47.54 L62.4,49.86 L63.1,52.12 L63.8,54.17 L64.5,55.9 L65.2,57.24 L65.9,58.17 L66.6,58.67 L67.3,58.8 L68,58.61 L68.7,58.17 L69.4,57.57 L70.1,56.87 L70.8,56.15 L71.5,55.46 L72.2,54.85 L72.9,54.34 L73.6,53.94 L74.3,53.66 L75,53.48 L75.7,53.39 L76.4,53.38 L77.1,53.41 L77.8,53.48 L78.5,53.57 L79.2,53.66 L79.9,53.75 L80.6,53.83 L81.3,53.89 L82,53.94"
+        android:strokeWidth="4"
+        android:strokeColor="#FF5EEAD4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>
