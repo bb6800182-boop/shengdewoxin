@@ -109,17 +109,28 @@
             </intent-filter>
         </service>
 
-        <!-- 主畫面／鎖定畫面小工具 -->
+        <!-- 主畫面／鎖定畫面小工具：深色、淺色兩版，小工具清單裡各一個 -->
         <receiver
             android:name=".AssistWidget"
             android:exported="false"
-            android:label="@string/app_name">
+            android:label="@string/widget_dark">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/assist_widget" />
+        </receiver>
+        <receiver
+            android:name=".AssistWidgetLight"
+            android:exported="false"
+            android:label="@string/widget_light">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/assist_widget_light" />
         </receiver>
     </application>
 </manifest>

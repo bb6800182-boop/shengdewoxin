@@ -35,7 +35,7 @@ colors:
   ink-muted-dark: "#CBD5E1"
   ink-subtle-dark: "#94A3B8"
   success-dark: "#4ADE80"
-  # ── App 圖示（淺色、深色共用）──
+  # ── App 圖示與小工具（淺色、深色共用）──
   icon-start: "#475569"
   icon-end: "#1E293B"
   icon-ring: "#FFFFFF"
@@ -249,14 +249,15 @@ components:
     textColor: "{colors.on-accent-dark}"
     rounded: "{rounded.full}"
     size: 64px
+  # 小工具分深色、淺色兩版給使用者看桌布選，不跟著系統切換，所以只用淺深共用的 App 圖示顏色
   widget-button:
-    backgroundColor: "{colors.accent}"
-    textColor: "{colors.on-accent}"
+    backgroundColor: "{colors.icon-end}"
+    textColor: "{colors.icon-wave}"
     rounded: "{rounded.full}"
     size: 56px
-  widget-button-dark:
-    backgroundColor: "{colors.accent-dark}"
-    textColor: "{colors.on-accent-dark}"
+  widget-button-light:
+    backgroundColor: "{colors.icon-ring}"
+    textColor: "{colors.icon-end}"
     rounded: "{rounded.full}"
     size: 56px
   page:
@@ -302,7 +303,8 @@ components:
 ## 顏色
 
 - **primary／on-primary**：主要按鈕（膠囊）。淺色是近黑底白字（17.9:1），深色反過來是近白底深字（17.1:1）。
-- **accent／on-accent**：麥克風按鈕與小工具。淺色用石板灰底＋青綠圖形（9.9:1），跟 App 圖示同一組；深色底上石板灰看不出來，改成青綠底＋深色圖形（9.6:1）。
+- **accent／on-accent**：助理面板的麥克風按鈕。淺色用石板灰底＋青綠圖形（9.9:1），跟 App 圖示同一組；深色底上石板灰看不出來，改成青綠底＋深色圖形（9.6:1）。
+- **小工具**：分深色、淺色兩版，讓使用者看桌布選，不跟著系統切換，所以只用 App 圖示那組淺深共用的顏色。深色版 icon-end 底＋icon-wave 麥克風（9.9:1），適合亮的桌布；淺色版 icon-ring 白底＋icon-end 麥克風（14.6:1），適合暗的桌布。
 - **accent-text**：「請說…」這類狀態字。淺色用深青綠 #0F766E（白卡片上 5.5:1），深色用淺青綠 #5EEAD4（12.1:1）。
 - **canvas → surface-1 → surface-2**：頁面底、卡片、輸入框與次要按鈕，三層由淺到深（深色由深到淺），靠 hairline 細框分層，不用陰影。
 - **ink → ink-muted → ink-subtle**：主文字、次要文字、說明文字；最淡的 ink-subtle 在各層底色上都 ≥ 5.7:1。
@@ -318,7 +320,7 @@ components:
 
 - 4dp 為基本單位；頁面左右 16dp，卡片之間 16dp，卡片內距上下 16、左右 20。
 - 按鈕與輸入框高度至少 48dp（好點、好按）。
-- 主畫面分兩頁：「設定」（開始使用 → 個人化 → 情境 → AI（選用）→ 權限（選用））和「說明」（叫出助理的方式 → 可以說什麼 → 常見問題 → 關於）。
+- 主畫面分兩頁：「設定」（開始使用 → 個人化 → 情境 → AI（選用）→ YouTube 金鑰（選用）→ 權限（選用））和「說明」（叫出助理的方式 → 可以說什麼 → 常見問題 → 關於）。
 - 畫面要簡潔：每個項目只留一行（標題＋狀態或按鈕＋「?」），說明收在「?」裡；選用的區塊和長內容預設收起，收起時在標題列右邊顯示摘要（例如「未設定」「已開 1/3」）。
 - 助理面板從底部升起，佔畫面下半部，底部讓出導覽列；點遮罩關閉。
 
@@ -343,7 +345,7 @@ components:
 - **routine-row**：情境清單的一列：觸發語句＋一行摘要（回應、做幾件事），整列可點，點開就地展開編輯（不跳對話框）；刪除要按兩次。
 - **assistant-sheet**：狀態字（accent-text）、聽到的句子（heard）、回覆（reply，ink-muted）、選項按鈕、麥克風按鈕。
 - **mic-button**：跟著音量微微放大，看得出有在聽。
-- **widget-button**：主畫面與鎖定畫面小工具，一顆置中的麥克風按鈕，整塊都能點。
+- **widget-button／widget-button-light**：主畫面與鎖定畫面小工具的深色、淺色版，一顆置中的麥克風按鈕（最大 56px，格子比較小時圓和麥克風一起等比縮小），整塊都能點；小工具清單裡各列一個（「聲得我心（深色）」「聲得我心（淺色）」）。
 
 ## App 圖示
 

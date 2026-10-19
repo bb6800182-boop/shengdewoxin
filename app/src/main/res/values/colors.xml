@@ -18,4 +18,8 @@
     <color name="success">#15803D</color>
     <!-- 助理面板後面的遮罩：黑色 40% -->
     <color name="scrim">#66000000</color>
+    <!-- App 圖示的顏色：淺色、深色共用，values-night 不覆寫。小工具的深色、淺色兩版用這組，所以不會跟著系統切換 -->
+    <color name="icon_end">#1E293B</color>
+    <color name="icon_ring">#FFFFFF</color>
+    <color name="icon_wave">#5EEAD4</color>
 </resources>

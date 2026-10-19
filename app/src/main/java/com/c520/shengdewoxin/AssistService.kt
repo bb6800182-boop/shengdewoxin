@@ -111,8 +111,10 @@ class AssistTile : TileService() {
     }
 }
 
-/** 主畫面／鎖定畫面小工具：一顆麥克風按鈕，點一下就開始聽。 */
-class AssistWidget : AppWidgetProvider() {
+/** 主畫面／鎖定畫面小工具：一顆麥克風按鈕，點一下就開始聽。這個是深色版，淺色版只換版面。 */
+open class AssistWidget : AppWidgetProvider() {
+    protected open val layout = R.layout.widget_assist
+
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         val pi = PendingIntent.getActivity(
             context,
@@ -120,8 +122,13 @@ class AssistWidget : AppWidgetProvider() {
             Intent(context, TriggerActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        val views = RemoteViews(context.packageName, R.layout.widget_assist)
+        val views = RemoteViews(context.packageName, layout)
         views.setOnClickPendingIntent(R.id.widget_root, pi)
         manager.updateAppWidget(ids, views)
     }
+}
+
+/** 淺色版小工具：白色按鈕＋石板灰麥克風，適合暗的桌布。 */
+class AssistWidgetLight : AssistWidget() {
+    override val layout = R.layout.widget_assist_light
 }

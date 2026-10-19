@@ -172,13 +172,16 @@ object Quick {
             }
         }
 
-        // 音樂控制（整句完全相同才算，「播放周杰倫」這種交給 AI）
+        // 播放控制（整句完全相同才算）：「播放」「繼續」只是讓剛剛在放的接著放
         when (t) {
             "暫停", "暫停音樂", "暫停播放", "音樂暫停", "停止播放", "停止音樂", "先暫停" -> return media("pause")
-            "播放", "繼續播放", "繼續", "播放音樂", "繼續音樂", "開始播放", "放音樂" -> return media("play")
+            "播放", "繼續播放", "繼續", "繼續音樂", "開始播放" -> return media("play")
             "下一首", "下一首歌", "下一曲", "切歌", "跳過", "換一首", "換下一首" -> return media("next")
             "上一首", "上一首歌", "上一曲" -> return media("prev")
         }
+
+        // 放音樂：「我要聽音樂」接著上次的放；「播放周杰倫」「我想聽晴天」在 YT Music 找出來
+        music(t)?.let { return it }
 
         // 音量：講「鈴聲、通知」調鈴聲，講「鬧鐘」調鬧鐘，其他調媒體；通話音量交給 AI
         if (Regex("音量|大聲|小聲|靜音").containsMatchIn(t) && !t.contains("通話")) {
@@ -266,4 +269,34 @@ object Quick {
     }
 
     private fun media(cmd: String) = Plan.of("", "media", JSONObject().put("cmd", cmd))
+
+    // 句子裡指定的音樂 App（clean() 已經拿掉空白，所以是 ytmusic、youtubemusic）
+    private val musicApp = Regex("(?:用|在|開)?(ytmusic|youtubemusic|youtube|spotify)(?:上面|裡面|上|裡)?", RegexOption.IGNORE_CASE)
+    private val anyMusic = Regex(
+        "^(?:我想|我要|想|要)?(?:隨便|隨機)?(?:播放|播|放|聽|來點|放點|來首|來一首|放首|放一首|播首|播一首)(?:一點|點|一些|些)?(?:音樂|歌|歌曲)(?:來聽)?$"
+    )
+    private val someMusic = Regex("^(?:我想聽|我要聽|想聽|要聽|播放|播)(.+?)(?:的歌曲|的歌|的音樂)?$")
+    // 「播放我喜歡的歌」「放我的最愛」「我要聽我按讚的音樂」：YT Music 的「喜歡的音樂」清單
+    private val likedMusic = Regex(
+        "^(?:我想|我要|想|要)?(?:播放|播|放|聽)(?:一下)?我?的?(?:喜歡|最愛|按讚|收藏)的?(?:歌曲|歌單|歌|音樂|清單)?$"
+    )
+    // 「我想聽笑話」「播報新聞」不是放音樂，交給 AI
+    private val notMusic = Regex("笑話|故事|新聞|天氣|氣象|有聲書|你|我")
+
+    /**
+     * 「我要聽音樂」「放首歌」→ 按播放鍵，接著上次在放的音樂（實測 YT Music 沒開著也會接著放）；
+     * 「播放周杰倫」「我想聽五月天的歌」→ 在音樂 App 找出來，可以加「用 Spotify」。不是放音樂的句子回 null。
+     */
+    private fun music(t: String): Plan? {
+        val m = musicApp.find(t)
+        val rest = if (m != null) t.removeRange(m.range) else t
+        if (anyMusic.matches(rest) || (m != null && rest in setOf("播放", "播", "放", "聽"))) return media("play")
+        if (likedMusic.matches(rest)) return Plan.of("", "play", JSONObject().put("liked", true))
+        val q = someMusic.find(rest)?.groupValues?.get(1) ?: return null
+        // 「播給媽媽」多半是「撥給」聽錯，交給後面的打電話規則
+        if (q.startsWith("給") || q.startsWith("電話") || notMusic.containsMatchIn(q)) return null
+        val p = JSONObject().put("q", q)
+        m?.groupValues?.get(1)?.lowercase()?.let { p.put("app", if (it.contains("music")) "youtube music" else it) }
+        return Plan.of("", "play", p)
+    }
 }

@@ -22,9 +22,11 @@ import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
 import android.view.KeyEvent
+import android.widget.Toast
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.Locale
@@ -131,7 +133,11 @@ object Actions {
                 "prev" -> "上一首"
                 else -> "播放音樂"
             }
-            "play" -> "播放「$q」"
+            "play" -> when {
+                p.optBoolean("liked") -> "播放喜歡的歌"
+                q.isBlank() -> "播放音樂"
+                else -> "播放「$q」"
+            }
             "settings" -> "打開設定頁"
             "search" -> "搜尋「$q」"
             "weather" -> "查天氣"
@@ -372,13 +378,28 @@ object Actions {
         return Res(label)
     }
 
+    /**
+     * 放音樂。沒指定歌：按播放鍵，接著上次的放。「喜歡的歌」：開 YT Music 的「喜歡的音樂」清單。
+     * 指定歌名、歌手：有 YouTube 金鑰就先查到第一首，用歌曲連結開 YT Music（實測會直接播，播完自動接相似的歌）；
+     * 沒金鑰或查不到，就用「搜尋並播放」指令——實測 YT Music 只會打開搜尋結果，要使用者點一下才放。
+     */
     private fun play(c: Context, p: JSONObject): Res {
+        if (p.optBoolean("liked")) return liked(c)
         val q = p.str("q") ?: return media(c, JSONObject().put("cmd", "play"))
         val app = p.str("app")?.lowercase().orEmpty()
         if (app.contains("youtube") && !app.contains("music")) {
             val i = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(q)))
             if (installed(c, YT)) i.setPackage(YT)
             return Res("在 YouTube 找「$q」", intent = i, leave = true)
+        }
+        if (!app.contains("spotify") && installed(c, YTM)) {
+            val (id, why) = ytFirst(c, q)
+            if (id != null) {
+                val i = Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=$id")).setPackage(YTM)
+                return Res("播放「$q」", intent = i, leave = true)
+            }
+            // 面板開了別的 App 就收起來，原因用 Toast 讓使用者看得到
+            why?.let { note(c, "$it，先打開搜尋結果") }
         }
         val i = Intent(MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH)
             .putExtra(MediaStore.EXTRA_MEDIA_FOCUS, "vnd.android.cursor.item/*")
@@ -391,7 +412,76 @@ object Actions {
         }
         pkg?.let { i.setPackage(it) }
         val web = Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/search?q=" + Uri.encode(q)))
-        return Res("播放「$q」", intent = i, leave = true, fallback = web)
+        return Res(if (pkg == YTM) "在 YT Music 找「$q」" else "播放「$q」", intent = i, leave = true, fallback = web)
+    }
+
+    /** 「播放我喜歡的歌」：YT Music 的「喜歡的音樂」清單，用連結打開會直接播（實測）。 */
+    private fun liked(c: Context): Res {
+        if (!installed(c, YTM)) return fail("要先裝 YT Music 才能播你喜歡的歌")
+        val i = Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?list=LM")).setPackage(YTM)
+        return Res("播放你喜歡的歌", intent = i, leave = true)
+    }
+
+    private val videoId = Regex("^[A-Za-z0-9_-]{11}$")
+
+    /**
+     * 用 YouTube Data API 查第一支音樂影片：找到回 (影片 ID, null)，沒填金鑰回 (null, null)，查不到或出錯回 (null, 原因)。
+     * 金鑰放標頭不放網址；金鑰若限制成「只給這個 App」，Google 看套件名稱＋簽章 SHA-1 這兩個標頭。
+     */
+    private fun ytFirst(c: Context, q: String): Pair<String?, String?> {
+        val key = Prefs.ytKey(c)
+        if (key.isEmpty()) return null to null
+        return try {
+            // 實測：type=video 也常把歌手頻道排第一，所以多拿幾筆、取第一支影片（一次查詢的額度一樣）
+            val url = "https://www.googleapis.com/youtube/v3/search?part=id&type=video&videoCategoryId=10&maxResults=5&regionCode=TW&q=" +
+                Uri.encode(q)
+            val conn = URL(url).openConnection() as HttpURLConnection
+            conn.connectTimeout = 4000
+            conn.readTimeout = 6000
+            conn.setRequestProperty("X-Goog-Api-Key", key)
+            conn.setRequestProperty("X-Android-Package", c.packageName)
+            signSha1(c)?.let { conn.setRequestProperty("X-Android-Cert", it) }
+            val code = conn.responseCode
+            if (code != HttpURLConnection.HTTP_OK) {
+                val body = conn.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                Log.w(TAG, "YouTube search HTTP $code: ${body.take(300)}")
+                return null to ytError(code, body)
+            }
+            val items = JSONObject(conn.inputStream.bufferedReader().use { it.readText() }).optJSONArray("items")
+            val id = (0 until (items?.length() ?: 0))
+                .map { items?.optJSONObject(it)?.optJSONObject("id")?.optString("videoId").orEmpty() }
+                .firstOrNull { videoId.matches(it) }
+            if (id != null) id to null else null to "YouTube 找不到「$q」"
+        } catch (e: Exception) {
+            Log.w(TAG, "YouTube search failed", e)
+            null to "連不上 YouTube"
+        }
+    }
+
+    /** YouTube API 的錯誤 → 使用者看得懂、知道去哪裡改的說法。 */
+    private fun ytError(code: Int, body: String): String {
+        val reason = runCatching {
+            JSONObject(body).getJSONObject("error").getJSONArray("errors").getJSONObject(0).optString("reason")
+        }.getOrNull().orEmpty()
+        return when {
+            reason == "quotaExceeded" || reason == "dailyLimitExceeded" -> "今天的 YouTube 免費查詢次數用完了"
+            reason == "accessNotConfigured" -> "這把金鑰還沒啟用 YouTube Data API"
+            code == 400 -> "YouTube 金鑰無效"
+            code == 403 -> "YouTube 金鑰不能用在這個 App，請檢查金鑰的限制"
+            else -> "YouTube 查詢失敗（$code）"
+        }
+    }
+
+    /** 這個 App 的簽章 SHA-1（大寫、不含冒號）。Google 金鑰限制成「Android 應用程式」時要對得上。 */
+    fun signSha1(c: Context): String? = runCatching {
+        val info = c.packageManager.getPackageInfo(c.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+        val cert = info.signingInfo?.apkContentsSigners?.firstOrNull() ?: return null
+        MessageDigest.getInstance("SHA-1").digest(cert.toByteArray()).joinToString("") { "%02X".format(it) }
+    }.getOrNull()
+
+    /** 從背景執行緒跳 Toast：面板打開別的 App 就收起，要讓使用者知道原因時用。 */
+    private fun note(c: Context, msg: String) {
+        Handler(Looper.getMainLooper()).post { Toast.makeText(c.applicationContext, msg, Toast.LENGTH_LONG).show() }
     }
 
     private fun settings(p: JSONObject): Res {

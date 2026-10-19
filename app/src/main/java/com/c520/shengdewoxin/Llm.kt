@@ -203,7 +203,7 @@ object Llm {
 - brightness {"level":0-100} 或 {"delta":1 或 -1}
 - dnd {"on":true 或 false}：勿擾模式
 - media {"cmd":"play|pause|next|prev"}：控制正在播的音樂
-- play {"q":"歌名、歌手或歌單","app":"spotify|youtube music|youtube（可省略）"}：播放指定內容
+- play {"q":"歌名、歌手或歌單","app":"spotify|youtube music|youtube（可省略）"}：播指定的歌或歌手；「我喜歡的歌、我的最愛」用 {"liked":true}；沒指定要聽什麼就用 media play
 - settings {"page":"wifi|bluetooth|internet|display|sound|battery|location|nfc|apps|main"}：打開設定頁（Wi-Fi、藍牙不能直接切換，用這個）
 - search {"q":"關鍵字"}：上網搜尋
 - weather {"day":0 今天、1 明天、2 後天,"place":"地點","lat":緯度,"lon":經度}：沒說地點就不要給 place、lat、lon

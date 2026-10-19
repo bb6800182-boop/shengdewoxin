@@ -3,6 +3,10 @@
     <string name="app_name">聲得我心</string>
     <string name="shortcut_talk">說話</string>
     <string name="shortcut_talk_long">開始說話</string>
-    <string name="widget_desc">點一下就開始聽你說話</string>
+    <!-- 小工具有深色、淺色兩版，在主畫面的小工具清單各列一個 -->
+    <string name="widget_dark">聲得我心（深色）</string>
+    <string name="widget_light">聲得我心（淺色）</string>
+    <string name="widget_desc_dark">點一下就開始聽你說話・石板灰按鈕，適合亮的桌布</string>
+    <string name="widget_desc_light">點一下就開始聽你說話・白色按鈕，適合暗的桌布</string>
     <string name="widget_talk">開始說話</string>
 </resources>

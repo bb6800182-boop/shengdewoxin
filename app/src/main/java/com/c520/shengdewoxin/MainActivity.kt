@@ -56,6 +56,8 @@ class MainActivity : Activity() {
     private lateinit var urlBox: View
     private lateinit var testResult: TextView
     private lateinit var aiSummary: TextView
+    private lateinit var ytField: EditText
+    private lateinit var ytSummary: TextView
     private lateinit var permSummary: TextView
     private lateinit var nickField: EditText
     private lateinit var lookRow: LinearLayout
@@ -105,6 +107,7 @@ class MainActivity : Activity() {
         }
         val p = Prefs.provider(this)
         aiSummary.text = if (Prefs.key(this, p).isEmpty()) "未設定" else "已設定・" + p.label.substringBefore('（')
+        ytSummary.text = if (Prefs.ytKey(this).isEmpty()) "未設定" else "已設定"
         val on = listOf(extraPerms.all(::granted), canWriteSettings(), canDnd()).count { it }
         permSummary.text = "已開 $on/3"
         routines.render()
@@ -216,7 +219,10 @@ class MainActivity : Activity() {
                 override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
         }
-        keyField = ui.field("貼上 API 金鑰", InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
+        // 金鑰欄位不是登入密碼：不讓密碼管理員（Bitwarden 等）跳出自動填入，也不會提示存成密碼
+        keyField = ui.field("貼上 API 金鑰", InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD).apply {
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+        }
         modelField = ui.field("模型名稱", InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
         urlField = ui.field("https://…/v1", InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI)
         urlBox = ui.labeled("API 網址（OpenAI 相容格式）", urlField)
@@ -245,6 +251,32 @@ class MainActivity : Activity() {
                     ui.button("測試連線", false) { if (save()) test() },
                 ),
                 ui.gap(8), testResult,
+            ),
+            ui.lp(16),
+        )
+
+        ytField = ui.field("貼上 YouTube 金鑰", InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD).apply {
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+            setText(Prefs.ytKey(this@MainActivity))
+        }
+        ytSummary = ui.text("", 13f, R.color.ink_subtle)
+        val sha = Actions.signSha1(this)?.chunked(2)?.joinToString(":").orEmpty()
+        p.addView(
+            ui.foldCard(
+                "YouTube 金鑰（選用）",
+                ytSummary,
+                false,
+                ui.text("填了之後，說「播放周杰倫」會直接在 YT Music 播第一首，播完自動接相似的歌；不填就打開搜尋結果，點一下才播。金鑰免費（每天大約 100 次），只存在這支手機。", 14f, R.color.ink_subtle),
+                ui.labeled("YouTube Data API 金鑰", ytField),
+                ui.gap(8),
+                ui.text("建議在 Google Cloud 把金鑰限制成只能用 YouTube Data API v3，應用程式選 Android：套件 $packageName，SHA-1 $sha", 13f, R.color.ink_subtle).apply {
+                    setTextIsSelectable(true)
+                },
+                ui.gap(16),
+                ui.row(
+                    ui.button("儲存", true) { saveYt() },
+                    ui.button("申請金鑰", false) { open(Intent(Intent.ACTION_VIEW, Uri.parse(YT_CONSOLE))) },
+                ),
             ),
             ui.lp(16),
         )
@@ -282,8 +314,13 @@ class MainActivity : Activity() {
                 step("手機背面點兩下", "打開「快速輕觸」（Quick Tap），動作選「數位助理」。螢幕亮著時，隨手點兩下就能講。", "設定") {
                     openFirst("系統設定 → 系統 → 手勢 → 快速輕觸", "com.google.android.settings.gestures.QUICK_TAP_SETTINGS")
                 },
-                step("主畫面小工具", "一顆麥克風按鈕，點一下就開始聽。", "加入") { pinWidget() },
-                step("鎖定畫面小工具", "先開啟鎖定畫面小工具；之後在鎖定畫面往左滑，長按進入編輯，新增「聲得我心」。", "設定") {
+                step(
+                    "主畫面小工具",
+                    "一顆麥克風按鈕，點一下就開始聽。有深色、淺色兩種：桌布亮選深色，桌布暗選淺色。",
+                    "深色",
+                    extra = "淺色" to { pinWidget(AssistWidgetLight::class.java) },
+                ) { pinWidget(AssistWidget::class.java) },
+                step("鎖定畫面小工具", "先開啟鎖定畫面小工具；之後在鎖定畫面往左滑，長按進入編輯，新增「聲得我心」（深色或淺色）。", "設定") {
                     openFirst("系統設定 → 螢幕 → 鎖定畫面 → 鎖定畫面小工具", "android.settings.COMMUNAL_SETTINGS", "android.settings.LOCK_SCREEN_SETTINGS")
                 },
                 step("快速設定磁貼", "下拉通知列點一下就能講。", "加入") { addTile() },
@@ -329,10 +366,14 @@ class MainActivity : Activity() {
         help: String,
         action: String? = null,
         check: (() -> Boolean?)? = null,
+        extra: Pair<String, () -> Unit>? = null,
         onClick: (() -> Unit)? = null,
     ): View {
         val done = ui.text("✓ 已完成", 13f, R.color.success).apply { visibility = View.GONE }
-        val btn = if (action != null && onClick != null) ui.button(action, false) { onClick() } else null
+        // 按鈕念成「標題：動作」，同一列兩顆（小工具的深色、淺色）也分得出來
+        val btns = listOfNotNull(if (action != null && onClick != null) action to onClick else null, extra)
+            .map { (label, f) -> ui.button(label, false) { f() }.apply { contentDescription = "$title：$label" } }
+        val btn = btns.firstOrNull()
         val desc = ui.text(help, 14f, R.color.ink_subtle).apply {
             visibility = View.GONE
             setPadding(0, 0, 0, ui.dp(8))
@@ -344,13 +385,15 @@ class MainActivity : Activity() {
             minimumHeight = ui.dp(56)
             addView(ui.text(title, 16f, bold = true), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
             if (check != null) addView(done, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = ui.dp(8) })
-            btn?.let { addView(it, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = ui.dp(8) }) }
+            // 一顆按鈕放標題右邊；兩顆（小工具的深色、淺色）擠在同一行標題會斷字，改放下面一列
+            if (btns.size == 1) addView(btns[0], LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = ui.dp(8) })
             addView(ui.helpToggle(desc, title))
         }
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             addView(head, ui.lp())
             addView(desc, ui.lp())
+            if (btns.size > 1) addView(ui.row(*btns.toTypedArray()).apply { setPadding(0, 0, 0, ui.dp(8)) }, ui.lp())
         }
     }
 
@@ -418,6 +461,18 @@ class MainActivity : Activity() {
         return true
     }
 
+    /** YouTube 金鑰：空白就清除；Google 的金鑰只有英數字、底線、連字號。 */
+    private fun saveYt() {
+        val v = ytField.text.toString().trim()
+        if (v.isNotEmpty() && !Regex("^[A-Za-z0-9_-]{20,100}$").matches(v)) {
+            toast("金鑰格式不對，請重新貼上")
+            return
+        }
+        Prefs.setYtKey(this, v)
+        toast(if (v.isEmpty()) "已清除 YouTube 金鑰" else "已儲存")
+        render()
+    }
+
     private fun test() {
         testResult.setTextColor(ui.col(R.color.ink_subtle))
         testResult.text = "測試中…"
@@ -478,13 +533,13 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun pinWidget() {
+    private fun pinWidget(cls: Class<out AssistWidget>) {
         val mgr = getSystemService(AppWidgetManager::class.java)
         if (mgr == null || !mgr.isRequestPinAppWidgetSupported) {
-            toast("請長按主畫面空白處 → 小工具 → 找「聲得我心」拖到主畫面")
+            toast("請長按主畫面空白處 → 小工具 → 找「聲得我心」，把深色或淺色拖到主畫面")
             return
         }
-        mgr.requestPinAppWidget(ComponentName(this, AssistWidget::class.java), null, null)
+        mgr.requestPinAppWidget(ComponentName(this, cls), null, null)
     }
 
     private fun addTile() {
@@ -528,11 +583,12 @@ class MainActivity : Activity() {
         private const val KEY_TAB = "tab"
         private const val SITE = "https://c520.pages.dev/shengdewoxin/"
         private const val REPO = "https://github.com/bb6800182-boop/shengdewoxin"
+        private const val YT_CONSOLE = "https://console.cloud.google.com/apis/library/youtube.googleapis.com"
 
         private val EXAMPLES = listOf(
             "鬧鐘、計時" to "「明天早上七點叫我」「計時十分鐘」「十分鐘後提醒我關火」",
             "聲音與螢幕" to "「取消靜音」「震動模式」「音量調到五十」「開勿擾」「螢幕亮一點」「打開手電筒」",
-            "App 與音樂" to "「打開 LINE」「下一首」「暫停」「打開 Wi-Fi 設定」",
+            "App 與音樂" to "「我要聽音樂」（接著上次的歌放）「播放我喜歡的歌」「我想聽周杰倫」（填了 YouTube 金鑰會直接播，沒填就打開搜尋結果）「下一首」「暫停」「打開 LINE」「打開 Wi-Fi 設定」",
             "導航、打電話" to "「導航到台北車站」「打給媽媽」（名字相近的人會列出來讓你選）",
             "時間與天氣" to "「現在幾點」「今天星期幾」「明天會下雨嗎」",
             "情境" to "「我到家了」，或你在「設定」裡自己加的句子",
@@ -542,7 +598,7 @@ class MainActivity : Activity() {
         private val FAQ = listOf(
             "為什麼不能喊名字叫出來？" to "手機裡專門聽喚醒詞的低耗電晶片只開放給系統內建的助理；第三方 App 要一直開著麥克風才能喊名字，很耗電。所以改用長按電源鍵、背面點兩下、小工具這些不耗電的叫法。",
             "一定要填 AI 金鑰嗎？" to "不用。「可以說什麼」裡大部分的指令都在手機上直接判斷。填了金鑰，只有規則聽不懂的句子才會送出去。",
-            "我說的話會被上傳嗎？" to "語音辨識由手機上的 Google 語音服務處理。聲得我心不收集資料；填了 AI 金鑰時，只有規則聽不懂的那一句會送給你選的 AI 服務，查天氣時會送出大概位置。",
+            "我說的話會被上傳嗎？" to "語音辨識由手機上的 Google 語音服務處理。聲得我心不收集資料；填了 AI 金鑰時，只有規則聽不懂的那一句會送給你選的 AI 服務；填了 YouTube 金鑰時，指定的歌名會送到 YouTube 查詢；查天氣時會送出大概位置。",
             "鎖定時要打開別的 App 怎麼辦？" to "導航、開 App 這類要打開其他 App 的指令，在鎖定畫面會先請你解鎖，這是 Android 的安全規定。",
         )
     }

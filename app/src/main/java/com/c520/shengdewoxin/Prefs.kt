@@ -53,6 +53,13 @@ object Prefs {
             .apply()
     }
 
+    /** YouTube 金鑰（選填）：有填，「播放周杰倫」會先查到歌，再叫 YT Music 直接播。 */
+    fun ytKey(c: Context): String = sp(c).getString("yt_key", null).orEmpty().trim()
+
+    fun setYtKey(c: Context, v: String) {
+        sp(c).edit().putString("yt_key", v.trim()).apply()
+    }
+
     /** 助理怎麼稱呼你；空白就不稱呼。 */
     fun nickname(c: Context): String = sp(c).getString("nickname", null).orEmpty().trim()
 

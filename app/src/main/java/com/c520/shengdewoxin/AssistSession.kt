@@ -99,6 +99,8 @@ class AssistSession(context: Context) : VoiceInteractionSession(context) {
                 cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
             }
             isClickable = true // 點面板本身不收起
+            // 麥克風跟著音量放大到 1.25 倍會超出自己的格子；預設會被內距切掉，下緣變平
+            clipToPadding = false
             setPadding(pad, ui.dp(16), pad, pad)
             addView(top, ui.lp(0))
             addView(heard, ui.lp(8))

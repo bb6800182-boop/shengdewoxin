@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 小工具：整塊都能點，中間一顆麥克風按鈕（accent 底、on-accent 圖形）；鎖定畫面的格子比較大，按鈕一樣置中 -->
+<!-- 深色版小工具：整塊都能點，中間一顆麥克風按鈕；淺色版是 widget_assist_light.xml。
+     按鈕最大 56dp；格子比較小（小工具清單的預覽、密的桌面格線）時 adjustViewBounds 讓它等比縮小 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
@@ -7,12 +8,10 @@
     android:contentDescription="@string/widget_talk">
 
     <ImageView
-        android:layout_width="56dp"
-        android:layout_height="56dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:background="@drawable/widget_button"
+        android:adjustViewBounds="true"
         android:importantForAccessibility="no"
-        android:padding="14dp"
-        android:src="@drawable/ic_mic"
-        android:tint="@color/on_accent" />
+        android:src="@drawable/widget_button" />
 </FrameLayout>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 主畫面與鎖定畫面都能放（Android 16 QPR2 起 Pixel 手機支援鎖定畫面小工具） -->
+<!-- 深色版小工具；淺色版是 assist_widget_light.xml。主畫面與鎖定畫面都能放（Android 16 QPR2 起 Pixel 手機支援鎖定畫面小工具） -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:description="@string/widget_desc"
+    android:description="@string/widget_desc_dark"
     android:initialLayout="@layout/widget_assist"
     android:previewLayout="@layout/widget_assist"
     android:minWidth="40dp"
